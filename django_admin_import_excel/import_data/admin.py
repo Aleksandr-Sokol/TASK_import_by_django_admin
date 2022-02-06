@@ -1,13 +1,9 @@
 from django.contrib import admin
 from django import forms
 from django.shortcuts import render, redirect
-import csv
-import sys
-from django.http import HttpResponse, HttpResponseRedirect
 from .models import Registry, Zmk
-from django.urls import path, reverse
+from django.urls import path
 import pandas as pd
-import xlrd
 
 
 def parsing_excel(df) -> dict:
@@ -42,32 +38,24 @@ def parsing_excel(df) -> dict:
     return result_dict
 
 
-def multy_save(data: dict) -> bool:
+def multy_save(data: dict):
     """"
     dict - dict with data from excel file
-    return created status:
-    True - create
-    False - Error
     """
-    try:
-        for zmk_name, value_dict in data.items():
-            zmk_i, has_create = Zmk.objects.get_or_create(name=zmk_name)
-            for object_name, value_list in value_dict.items():
-                for values in value_list:
-                    obj, created = Registry.objects.update_or_create(
-                        name=object_name,
-                        num=values[0],
-                        zmk=zmk_i,
-                        defaults={
-                            'departure_date': values[1],
-                            'receiving_date': values[3],
-                            'weight': values[2],
-                        },
-                    )
-        return True
-    except Exception as e:
-        return False
-
+    for zmk_name, value_dict in data.items():
+        zmk_i, has_create = Zmk.objects.get_or_create(name=zmk_name)
+        for object_name, value_list in value_dict.items():
+            for values in value_list:
+                obj, created = Registry.objects.update_or_create(
+                    name=object_name,
+                    num=values[0],
+                    zmk=zmk_i,
+                    defaults={
+                        'departure_date': values[1],
+                        'receiving_date': values[3],
+                        'weight': values[2],
+                    },
+                )
 
 @admin.register(Zmk)
 class ZmkAdmin(admin.ModelAdmin):
@@ -102,12 +90,8 @@ class RegistryAdmin(admin.ModelAdmin):
             if ext in allowable_extensions:
                 df = pd.read_excel(file.file)
                 dict_data = parsing_excel(df)
-                is_created = multy_save(dict_data)
-                is_created = True
-                if is_created:
-                    message = "Your xlsx file has been imported"
-                else:
-                    message = "Can not import data from xlsx file"
+                multy_save(dict_data)
+                message = "Your xlsx file has been imported"
             else:
                 message = "Invalid file extension"
             self.message_user(request, message)
