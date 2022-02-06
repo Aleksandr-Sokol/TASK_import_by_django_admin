@@ -1,0 +1,41 @@
+version: "3"
+
+services:
+  postgresql_db:
+    image: postgres:14.1-alpine
+    environment:
+      POSTGRES_DB: "tree_db"
+      POSTGRES_USER: "alexander"
+      POSTGRES_PASSWORD: "123"
+      PGDATA: "/var/lib/postgresql/data/pgdata"
+    volumes:
+      - ../2. Init Database:/docker-entrypoint-initdb.d
+      - .:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  web:
+    build: .
+
+    ports:
+      - "8000:8000"
+    depends_on:
+    - "postgresql_db"
+    volumes:
+      - ./:/usr/src/app
+
+  nginx:
+    build:
+      context: ./Docker/nginx
+      dockerfile: Dockerfile_nginx
+    depends_on:
+      - "web"
+      - "postgresql_db"
+    ports:
+      - "80:80"
+    volumes:
+      - ./static_nginx/:/static
+      - ./templates/:/templates
+
+volumes:
+  static:
