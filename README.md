@@ -37,6 +37,7 @@ root - логин
 http://localhost/import_data/registry/
 
 При нажатии на "Import xlsx" откроется форма для выбора файлов 
+При нажатии на кновку "Upload xlsx" начнется импорт данных.
 
 # Authors and acknowledgment
 Alexander Sokolov

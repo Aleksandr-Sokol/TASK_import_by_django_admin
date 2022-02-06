@@ -22,7 +22,7 @@ admin.site.site_title = "Evraz Steel Building Admin Portal"
 admin.site.index_title = "Welcome to Evraz Steel Building Portal"
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
+    path('', admin.site.urls),
 ]
 
 if settings.DEBUG:
