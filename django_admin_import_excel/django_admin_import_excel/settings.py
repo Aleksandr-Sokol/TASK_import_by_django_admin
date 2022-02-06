@@ -24,8 +24,7 @@ SECRET_KEY = 'django-insecure-f0kxx0a6e_!=474i964mwzm-2g=5d+)s(^ywo*3^6d*6f#7b)=
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['*',]
-INTERNAL_IPS = ['127.0.0.1', ]
+ALLOWED_HOSTS = ['*', '127.0.0.1']
 
 # Application definition
 
@@ -36,7 +35,6 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'debug_toolbar',
     'import_data',
     'psycopg2',
 ]
@@ -49,7 +47,6 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'debug_toolbar.middleware.DebugToolbarMiddleware',
 ]
 
 ROOT_URLCONF = 'django_admin_import_excel.urls'
@@ -78,16 +75,22 @@ WSGI_APPLICATION = 'django_admin_import_excel.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.0/ref/settings/#databases
 
+
+
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': 'tree_db',
-        'USER': 'alexander',
-        'PASSWORD': '123',
-         'HOST': 'postgresql_db', # For production (start in docker)
-        # 'HOST': 'localhost', # (start in localhost)
-        'PORT': '5432',
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
     }
+    # 'default': {
+    #     'ENGINE': 'django.db.backends.postgresql_psycopg2',
+    #     'NAME': 'tree_db',
+    #     'USER': 'alexander',
+    #     'PASSWORD': '123',
+    #      'HOST': 'postgresql_db', # For production (start in docker)
+    #     # 'HOST': 'localhost', # (start in localhost)
+    #     'PORT': '5432',
+    # }
 }
 
 # Password validation
@@ -134,8 +137,6 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
-
-DEBUG_TOOLBAR_CONFIG = {"SHOW_TOOLBAR_CALLBACK": lambda request: True,}
 
 # ДЛя работы со статическими файлами из nginx
 STATIC_ROOT = BASE_DIR / 'static_nginx/'

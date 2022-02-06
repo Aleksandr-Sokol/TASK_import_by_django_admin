@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django import forms
 from django.shortcuts import render, redirect
-from .models import Registry, Zmk
+from .models import Registry, Zmk, Object, ExcelFile
 from django.urls import path
 import pandas as pd
 
@@ -38,16 +38,22 @@ def parsing_excel(df) -> dict:
     return result_dict
 
 
+@admin.register(Zmk)
+class ZmkAdmin(admin.ModelAdmin):
+    list_display = ("name",)
+
+
 def multy_save(data: dict):
     """"
     dict - dict with data from excel file
     """
     for zmk_name, value_dict in data.items():
-        zmk_i, has_create = Zmk.objects.get_or_create(name=zmk_name)
+        zmk_i, has_create_zmk = Zmk.objects.get_or_create(name=zmk_name)
         for object_name, value_list in value_dict.items():
+            object_i, has_create_object = Object.objects.get_or_create(name=object_name, zmk=zmk_i)
             for values in value_list:
                 obj, created = Registry.objects.update_or_create(
-                    name=object_name,
+                    object=object_i,
                     num=values[0],
                     zmk=zmk_i,
                     defaults={
@@ -57,8 +63,14 @@ def multy_save(data: dict):
                     },
                 )
 
-@admin.register(Zmk)
-class ZmkAdmin(admin.ModelAdmin):
+
+@admin.register(ExcelFile)
+class ExcelFileAdmin(admin.ModelAdmin):
+    list_display = ("file", 'date_import')
+
+
+@admin.register(Object)
+class ObjectAdmin(admin.ModelAdmin):
     list_display = ("name",)
 
 
@@ -68,7 +80,7 @@ class CsvImportForm(forms.Form):
 
 @admin.register(Registry)
 class RegistryAdmin(admin.ModelAdmin):
-    list_display = ('num', "name", 'weight', 'departure_date', 'receiving_date')
+    list_display = ('num', 'weight', 'departure_date', 'receiving_date')
     date_hierarchy = 'departure_date'
     change_list_template = "entities/changelist.html"
 
@@ -88,12 +100,16 @@ class RegistryAdmin(admin.ModelAdmin):
             except IndexError:
                 ext = ''
             if ext in allowable_extensions:
-                df = pd.read_excel(file.file)
-                dict_data = parsing_excel(df)
-                multy_save(dict_data)
-                message = "Your xlsx file has been imported"
+                try:
+                    df = pd.read_excel(file.file)
+                    dict_data = parsing_excel(df)
+                    ExcelFile.objects.create(file=file)
+                    multy_save(dict_data)
+                    message = "Your xlsx file has been imported"
+                except ValueError:
+                    message = "Error: Invalid xlsx file"
             else:
-                message = "Invalid file extension"
+                message = "Error: Invalid file extension"
             self.message_user(request, message)
             return redirect("..")
         form = CsvImportForm()
