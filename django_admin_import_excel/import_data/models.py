@@ -5,6 +5,9 @@ from django.db.models import ForeignKey, PROTECT
 class Zmk(models.Model):
     name = models.CharField(max_length=120, null=False)
 
+    class Meta:
+        verbose_name_plural = "Zmk"
+
 
 class Registry(models.Model):
     num = models.PositiveIntegerField()
@@ -17,3 +20,6 @@ class Registry(models.Model):
                      on_delete=PROTECT,
                      null=True,
                      )
+
+    class Meta:
+        verbose_name_plural = "RTS"
