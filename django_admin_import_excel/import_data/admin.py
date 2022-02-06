@@ -4,7 +4,7 @@ from django.shortcuts import render, redirect
 import csv
 import sys
 from django.http import HttpResponse, HttpResponseRedirect
-from .models import Registry
+from .models import Registry, Zmk
 from django.urls import path, reverse
 import pandas as pd
 import xlrd
@@ -12,7 +12,7 @@ import xlrd
 
 def parsing_excel(df) -> dict:
     """
-    :param df - pandas dataframe from excel file
+    df - pandas dataframe from excel file
     return dict data
     Функция очищает пустый столбики данных и столбики в которых не заполнены поля даты
     """
@@ -42,12 +42,46 @@ def parsing_excel(df) -> dict:
     return result_dict
 
 
+def multy_save(data: dict) -> bool:
+    """"
+    dict - dict with data from excel file
+    return created status:
+    True - create
+    False - Error
+    """
+    try:
+        for zmk_name, value_dict in data.items():
+            zmk_i, has_create = Zmk.objects.get_or_create(name=zmk_name)
+            for object_name, value_list in value_dict.items():
+                for values in value_list:
+                    obj, created = Registry.objects.update_or_create(
+                        name=object_name,
+                        num=values[0],
+                        zmk=zmk_i,
+                        defaults={
+                            'departure_date': values[1],
+                            'receiving_date': values[3],
+                            'weight': values[2],
+                        },
+                    )
+        return True
+    except Exception as e:
+        return False
+
+
+@admin.register(Zmk)
+class ZmkAdmin(admin.ModelAdmin):
+    list_display = ("name",)
+
+
 class CsvImportForm(forms.Form):
     xlsx_file = forms.FileField()
 
 
 @admin.register(Registry)
 class RegistryAdmin(admin.ModelAdmin):
+    list_display = ('num', "name", 'weight', 'departure_date', 'receiving_date')
+    date_hierarchy = 'departure_date'
     change_list_template = "entities/changelist.html"
 
     def get_urls(self):
@@ -59,12 +93,24 @@ class RegistryAdmin(admin.ModelAdmin):
 
     def import_csv(self, request):
         if request.method == "POST":
+            allowable_extensions = ('xlsx', 'xls')
             file = request.FILES["xlsx_file"]
-            df = pd.read_excel(file.file)
-            dict_data = parsing_excel(df)
-            print(dict_data)
-
-            self.message_user(request, f"Your xlsx file has been imported. new {10}")
+            try:
+                ext = file.name.split('.')[-1]
+            except IndexError:
+                ext = ''
+            if ext in allowable_extensions:
+                df = pd.read_excel(file.file)
+                dict_data = parsing_excel(df)
+                is_created = multy_save(dict_data)
+                is_created = True
+                if is_created:
+                    message = "Your xlsx file has been imported"
+                else:
+                    message = "Can not import data from xlsx file"
+            else:
+                message = "Invalid file extension"
+            self.message_user(request, message)
             return redirect("..")
         form = CsvImportForm()
         payload = {"form": form}
